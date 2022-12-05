@@ -3,6 +3,7 @@ TODO
 result
 mem_tool
 test_array
+*.swp
 
 # Prerequisites
 *.d
