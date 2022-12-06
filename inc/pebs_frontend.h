@@ -12,6 +12,9 @@
 #include <asm/unistd.h>
 #include "event.h"
 
+const int SAMPLE_PERIOD = 100;
+const int BUFFER_PAGE_NUM = (1 + (1 << 16)); // buffer_size: 4K + 256M;
+
 struct perf_sample {
   struct perf_event_header header;
   __u64 ip;

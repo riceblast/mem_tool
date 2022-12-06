@@ -8,17 +8,60 @@
 int event = ALL_ACCESSES;
 int pid;
 int cpuid = -1;
+struct perf_event_mmap_page *buffer;
 
 char file_name[1000]; // store the elf file path
 
 // run the pebs frontend
-void pebs_begin(void) {
+void pebs_begin(void) 
+{
 	printf("pid: %d\n", pid);
 	printf("cpuid: %d\n", cpuid);
 
 	PebsFrontEnd pebs_frontend(event, pid, cpuid);
 	pebs_frontend.perf_setup();
-	pebs_frontend.perf_start();
+	buffer = pebs_frontend.get_buffer();
+	//pebs_frontend.perf_start();
+}
+
+// periodically print the working set size
+void process_working_set_size(void) 
+{	
+	int count = 0;
+
+	for (;;) {
+		struct perf_event_mmap_page *p = buffer;
+		char *pbuf = (char *)p + p->data_offset; // goto the data part of buffer
+
+		__sync_synchronize();
+
+		if(p->data_head == p->data_tail) 
+			continue;
+
+		while(p->data_tail != p->data_head) {
+			struct perf_event_header *ph = (struct perf_event_header *)(pbuf + (p->data_tail % p->data_size));
+			struct perf_sample *ps;
+
+			switch(ph->type) {
+				case PERF_RECORD_SAMPLE:
+					count +=1;
+					ps = (struct perf_sample*)ph;
+					assert(ps != NULL);
+					printf("addr: 0x%llx\n", ps->addr);
+					break;
+				case PERF_RECORD_THROTTLE:
+				case PERF_RECORD_UNTHROTTLE:
+					printf("throttle or unthrottle\n");
+					break;
+				default:
+					printf("error\n");
+			}
+
+			p->data_tail += ph->size;
+		}
+
+		printf("count: %d\n", count);
+	}
 }
 
 int main(int argc, char *argv[])
@@ -45,5 +88,6 @@ int main(int argc, char *argv[])
 	} else {
 		pid = rc;
 		pebs_begin();
+		process_working_set_size();
 	}
 }

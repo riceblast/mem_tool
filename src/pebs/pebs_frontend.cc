@@ -16,14 +16,14 @@ PebsFrontEnd::PebsFrontEnd(int event, int pid, int cpuid)
 	this->event = event;
 	this->pid = pid;
 	this->cpuid = cpuid;
-	page_num = (1 + (1 << 16));
-	sample_period = 100;
+	page_num = BUFFER_PAGE_NUM;
+	sample_period = SAMPLE_PERIOD;
 	memset(&attr, 0, sizeof(struct perf_event_attr));
 }
 
 struct perf_event_mmap_page *PebsFrontEnd::get_buffer(void)
 {
-	return buffer;
+	return this->buffer;
 }
 
 long PebsFrontEnd::perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
