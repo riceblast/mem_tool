@@ -31,7 +31,7 @@ unsigned int BKDR(const unsigned char* str, int len){
 unsigned int OAAT(const unsigned char *str, int len)
 {
     unsigned int hash, i;
-    for (hash=0, i=0; i<len; ++i)
+    for (hash=0, i=0; i < (unsigned int)len; ++i)
     {
         hash += str[i];
         hash += (hash << 10);
@@ -49,7 +49,7 @@ unsigned int RSHash(const unsigned char * str, int len)
     unsigned int a = 63689;
     unsigned int hash = 0;
 
-    for(unsigned int i = 0; i < len; i++){
+    for(unsigned int i = 0; i < (unsigned int)len; i++){
         hash = hash * a + (*str++);
         a *= b;
     }
@@ -59,7 +59,7 @@ unsigned int RSHash(const unsigned char * str, int len)
 unsigned int JSHash(const unsigned char * str, int len)
 {
     unsigned int hash = 1315423911;
-    for(unsigned int i = 0; i < len; i++)
+    for(unsigned int i = 0; i < (unsigned int)len; i++)
     {
         hash ^= ((hash << 5) + str[i] + (hash >> 2));
     }
@@ -69,7 +69,7 @@ unsigned int JSHash(const unsigned char * str, int len)
 unsigned int DJBHash (const unsigned char * str, int len)
 {
     unsigned int hash = 5381;
-    for(unsigned int i = 0; i < len; i++){
+    for(unsigned int i = 0; i < (unsigned int)len; i++){
         hash += (hash << 5) + (*str++);
     }
     return hash;
@@ -79,7 +79,7 @@ unsigned int APHash(const unsigned char *str, int len)
 {
     unsigned int hash = 0;
 
-    for (unsigned int i = 0; i < len; i++)
+    for (unsigned int i = 0; i < (unsigned int)len; i++)
     {
         if ((i & 1) == 0)
         {
@@ -98,7 +98,7 @@ unsigned int SDBM(const unsigned char *str, int len)
 {
     unsigned int hash = 0;
 
-    for (unsigned int i = 0; i < len; i++) {
+    for (unsigned int i = 0; i < (unsigned int)len; i++) {
         hash = str[i] + (hash << 6) + (hash << 16) - hash;
     }
 
@@ -110,7 +110,7 @@ unsigned int FNV32(const unsigned char *str, unsigned int len)
     //unsigned char *bp = (unsigned char *)str;	/* start of buffer */
     //unsigned char *be = str + len;		/* beyond end of buffer */
     unsigned int hval = 0;
-    for(int i = 0; i < len; i++) {
+    for(int i = 0; (unsigned int)i < len; i++) {
         hval *= 0x01000193;
 
         //hval += (hval<<1) + (hval<<4) + (hval<<7) + (hval<<8) + (hval<<24);
@@ -134,7 +134,7 @@ unsigned int PJWHash (const unsigned char *str, unsigned int len)
     (BitsInUnignedInt - OneEighth);
     unsigned int hash = 0;
     unsigned int test = 0;
-    for(int i = 0; i < len; i++)
+    for(int i = 0; (unsigned int)i < len; i++)
     {
         hash = (hash << OneEighth) + (*str++);
         if ((test = hash & HighBits) != 0)

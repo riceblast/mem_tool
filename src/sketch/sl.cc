@@ -58,7 +58,7 @@ void CM_SL::insert(Data data)
     {
         position = Hash(data.str, i, DATA_LEN) % hash_length + i * hash_length;
         //cout<<position<<endl;
-        bucket[position].count[(field_idx + (position < posi_idx)) % field_num] += 1;
+        bucket[position].count[(field_idx + (position < (unsigned int)posi_idx)) % field_num] += 1;
     }
 }
 int CM_SL::query(Data data)
@@ -66,7 +66,7 @@ int CM_SL::query(Data data)
     unsigned int min_num = 0x7fffffff;
 
     for (int i = 0; i < hash_number; ++i)
-        min_num = MIN(bucket[Hash(data.str, i, DATA_LEN) % hash_length + i * hash_length].Total(), min_num);
+        min_num = MIN((unsigned int)bucket[Hash(data.str, i, DATA_LEN) % hash_length + i * hash_length].Total(), min_num);
 
     return min_num;
 }
@@ -76,22 +76,22 @@ void CU_SL::insert(Data data)
     Base_SL::insert(data);
     int k = posi_idx / hash_length;
     unsigned int position = Hash(data.str, k, DATA_LEN) % hash_length + k * hash_length;
-    if (position < posi_idx)
+    if (position < (unsigned int)posi_idx)
     {
         k = (k + 1) % hash_number;
         position = Hash(data.str, k, DATA_LEN) % hash_length + k * hash_length;
     }
 
-    unsigned int height = bucket[position].count[(field_idx + (position < posi_idx)) % field_num];
-    bucket[position].count[(field_idx + (position < posi_idx)) % field_num] += 1;
+    unsigned int height = bucket[position].count[(field_idx + (position < (unsigned int)posi_idx)) % field_num];
+    bucket[position].count[(field_idx + (position < (unsigned int)posi_idx)) % field_num] += 1;
 
     for (int i = (k + 1) % hash_number; i != k; i = (i + 1) % hash_number)
     {
         position = Hash(data.str, i, DATA_LEN) % hash_length + i * hash_length;
-        if (bucket[position].count[(field_idx + (position < posi_idx)) % field_num] <= height)
+        if ((unsigned int)bucket[position].count[(field_idx + (position < (unsigned int)posi_idx)) % field_num] <= height)
         {
-            height = bucket[position].count[(field_idx + (position < posi_idx)) % field_num];
-            bucket[position].count[(field_idx + (position < posi_idx)) % field_num] += 1;
+            height = bucket[position].count[(field_idx + (position < (unsigned int)posi_idx)) % field_num];
+            bucket[position].count[(field_idx + (position < (unsigned int)posi_idx)) % field_num] += 1;
         }
     }
 }
@@ -101,7 +101,7 @@ int CU_SL::query(Data data)
     unsigned int min_num = 0x7fffffff;
 
     for (int i = 0; i < hash_number; ++i)
-        min_num = MIN(bucket[Hash(data.str, i, DATA_LEN) % hash_length + i * hash_length].Total(), min_num);
+        min_num = MIN((unsigned int)bucket[Hash(data.str, i, DATA_LEN) % hash_length + i * hash_length].Total(), min_num);
 
     return min_num;
 }
@@ -114,7 +114,7 @@ void CO_SL::insert(Data data)
     {
         position = Hash(data.str, i, DATA_LEN) % hash_length + i * hash_length;
         countHash = Hash(data.str, i+1, DATA_LEN) & 1;
-        bucket[position].count[(field_idx + (position < posi_idx)) % field_num] +=
+        bucket[position].count[(field_idx + (position < (unsigned int)posi_idx)) % field_num] +=
             Count_Hash[countHash];
     }
 }
