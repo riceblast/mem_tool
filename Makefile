@@ -28,7 +28,6 @@ MEM_TOOL_BIN = $(MEM_TOOL_BIN_DIR)/mem_tool
 #config test
 MEM_TOOL_TEST_DIR = $(MEM_TOOL_HOME)/test
 
-
 all: $(MEM_TOOL_BIN)
 
 # compile memory trace frontend
@@ -62,15 +61,12 @@ $(MEM_TOOL_BIN): $(MEM_TOOL_BUILD_OBJS)
 -include $(MEM_TOOL_BUILD_OBJS:.o=.d)
 	
 #some test file
-perf_test:
-	$(CXX) $(CFLAGS) $(LDFLAGS) -o $(MEM_TOOL_TEST_DIR)/perf_test $(MEM_TOOL_TEST_DIR)/perf_test.cc
-
-test_array:
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(MEM_TOOL_TEST_DIR)/test_array $(MEM_TOOL_TEST_DIR)/test_array.c
+test_array: $(MEM_TOOL_TEST_DIR)/test_array.c
+	@mkdir -p $(MEM_TOOL_BIN_DIR)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(MEM_TOOL_BIN_DIR)/test_array $(MEM_TOOL_TEST_DIR)/test_array.c
 
 clean:
-	rm -rf $(MEM_TOOL_BUILD_DIR)
+	rm -rf $(MEM_TOOL_BUILD_DIR) $(MEM_TOOL_BIN_DIR)
 
-
-.PHONY: $(MEM_TOOL_BIN) perf_test test_array clean
+.PHONY: $(MEM_TOOL_BIN) test_array clean
 #.PHONY: $(MEM_TOOL_BUILD_OBJS) $(MEM_TOOL_BIN) perf_test test_array clean

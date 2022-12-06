@@ -4,6 +4,7 @@ result
 mem_tool
 test_array
 *.swp
+*.tmp
 
 # Prerequisites
 *.d
