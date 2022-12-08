@@ -1,8 +1,7 @@
 CC = gcc
 CXX = g++
 CFLAGS = -g -Wall
-#CXXFLAGS = -g -Wall -MMD
-CXXFLAGS = -g -Wall
+CXXFLAGS = -g -Wall -MMD
 LDFLAGS = -pthread -lm
 
 #config src inc
@@ -28,7 +27,8 @@ MEM_TOOL_BIN = $(MEM_TOOL_BIN_DIR)/mem_tool
 #config test
 MEM_TOOL_TEST_DIR = $(MEM_TOOL_HOME)/test
 
-all: $(MEM_TOOL_BIN)
+#all: $(MEM_TOOL_BIN)
+all: app
 
 # compile memory trace frontend
 $(MEM_TOOL_BUILD_DIR)/%.o: $(FRONTEND_SRC)/%.cc
@@ -38,8 +38,15 @@ $(MEM_TOOL_BUILD_DIR)/%.o: $(FRONTEND_SRC)/%.cc
 	$(CXX) $(CXXFLAGS) -I$(MEM_TOOL_INC) -c -o $@ $<
 
 # compile sketch backend
-$(MEM_TOOL_BUILD_DIR)/%.o: $(SKETCH_SRC)/%.cc
-	@echo "------------compile sketch---------------"
+# compile frequency sketch
+$(MEM_TOOL_BUILD_DIR)/%.o: $(SKETCH_SRC)/frequency/%.cc
+	@echo "------------compile frequency sketch---------------"
+	@echo + CXX "->" MEM_TOOL_HOME/$(shell realpath $< --relative-to $(MEM_TOOL_HOME))
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -I$(MEM_TOOL_INC) -c -o $@ $<
+# compile membership sketch
+$(MEM_TOOL_BUILD_DIR)/%.o: $(SKETCH_SRC)/membership/%.cc
+	@echo "------------compile membership sketch---------------"
 	@echo + CXX "->" MEM_TOOL_HOME/$(shell realpath $< --relative-to $(MEM_TOOL_HOME))
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -I$(MEM_TOOL_INC) -c -o $@ $<
@@ -64,6 +71,9 @@ $(MEM_TOOL_BIN): $(MEM_TOOL_BUILD_OBJS)
 test_array: $(MEM_TOOL_TEST_DIR)/test_array.c
 	@mkdir -p $(MEM_TOOL_BIN_DIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $(MEM_TOOL_BIN_DIR)/test_array $(MEM_TOOL_TEST_DIR)/test_array.c
+
+#compile for memtool and test
+app: $(MEM_TOOL_BIN) test_array
 
 clean:
 	rm -rf $(MEM_TOOL_BUILD_DIR) $(MEM_TOOL_BIN_DIR)

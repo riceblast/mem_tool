@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/mman.h>
 #include <assert.h>
 
@@ -16,10 +17,17 @@ void sigint_hangler(int sig)
 	exit (0);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
 	if (signal(SIGINT, sigint_hangler) == SIG_ERR)
 		printf("install signal handler error\n");
+
+	//if (argc <= 1) {
+	//	dprintf(STDERR_FILENO, "error, need more argument\n");
+	//	exit(0);
+	//} else {
+	//	printf("input: %s\n", argv[1]);
+	//}
 
 	int stack_addr_1 = 0x293;
 

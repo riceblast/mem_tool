@@ -3,11 +3,16 @@
 #include <unistd.h>
 #include <string.h>
 #include <iostream>
+#include <fstream>
 #include "pebs_frontend.h"
+#include "sl.h"
+#include "data.h"
+#include "BloomFilter.h"
 
 int event = ALL_ACCESSES;
 int pid;
 int cpuid = -1;
+int target_page_size = 12; // 2 ^ 12byte, the page size we want to focus
 struct perf_event_mmap_page *buffer;
 
 char file_name[1000]; // store the elf file path
@@ -27,7 +32,19 @@ void pebs_begin(void)
 // periodically print the working set size
 void process_working_set_size(void) 
 {	
-	int count = 0;
+	int count = 0; // the total access count of all addr in this window
+	int data_count; // the access count of addr in this window
+	int hot_threshold = 5;
+	int hot_page_count = 0;
+	int footprint_page_count = 0;
+	long long unsigned int address;
+
+	Data data;
+	data.timestamp = 0;
+	data.addr = 0;
+	CM_SL fre_sketch(WINDOW_SIZE, 10 * 1024 * 1024, 3, 3); // 10M memory
+	BloomFilter hot_bf(1000);
+	BloomFilter footprint_bf(1000);
 
 	for (;;) {
 		struct perf_event_mmap_page *p = buffer;
@@ -47,20 +64,56 @@ void process_working_set_size(void)
 					count +=1;
 					ps = (struct perf_sample*)ph;
 					assert(ps != NULL);
-					printf("addr: 0x%llx\n", ps->addr);
+					address = ps->addr >> target_page_size;
+
+					// update footprint
+					if (!footprint_bf.query(data.str)) {
+						footprint_page_count += 1;	
+						footprint_bf.insert(data.str);
+					}
+
+					// insert to CM Sketch
+					data.timestamp += 1;
+					data.addr = address;
+					assert(data.timestamp >= 0);			
+					fre_sketch.insert(data);
+
+					// update hot page
+					data_count = fre_sketch.query(data);
+					if (data_count > hot_threshold && 
+						!hot_bf.query(data.str)) {
+						hot_page_count += 1;
+						hot_bf.insert(data.str);
+					//	printf("hot page addr: 0x%llx\n", address);
+					}
+
+					// print info and reset status
+					if (count >= QUERY_PERIOD) {
+						assert(count == QUERY_PERIOD);
+						printf("hot: %d footprint: %d (KB)\n",
+							hot_page_count << target_page_size >> 10,
+							footprint_page_count << target_page_size >> 10);
+						count = 0;
+						hot_page_count = 0;
+						footprint_page_count = 0;
+
+						footprint_bf.clear();
+						hot_bf.clear();
+					}
+
 					break;
 				case PERF_RECORD_THROTTLE:
 				case PERF_RECORD_UNTHROTTLE:
-					printf("throttle or unthrottle\n");
+					dprintf(STDERR_FILENO, "throttle or unthrottle\n");
 					break;
 				default:
-					printf("error\n");
+					dprintf(STDERR_FILENO, "error\n");
 			}
 
 			p->data_tail += ph->size;
 		}
 
-		printf("count: %d\n", count);
+		//printf("count: %d\n", count);
 	}
 }
 
@@ -84,7 +137,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Fork failed\n");
 		exit(1);
 	} else if (rc == 0) {
-		execv(file_name, argv);
+		execv(file_name, argv + 1);
 	} else {
 		pid = rc;
 		pebs_begin();

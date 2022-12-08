@@ -6,10 +6,14 @@
 
 class Data{
 public:  
-    int head;
+    //int head;
     //uint64_t timestamp;
     int timestamp;
-    unsigned char str[DATA_LEN];
+    union {
+		unsigned char str[DATA_LEN];
+		long long unsigned int addr;
+	};
+
     Data& operator = (Data an);
 };
 
