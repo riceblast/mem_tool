@@ -16,6 +16,7 @@ int target_page_size = 12; // 2 ^ 12byte, the page size we want to focus
 struct perf_event_mmap_page *buffer;
 
 char file_name[1000]; // store the elf file path
+FILE *fp = NULL;
 
 // run the pebs frontend
 void pebs_begin(void) 
@@ -43,8 +44,8 @@ void process_working_set_size(void)
 	data.timestamp = 0;
 	data.addr = 0;
 	CM_SL fre_sketch(WINDOW_SIZE, 10 * 1024 * 1024, 3, 3); // 10M memory
-	BloomFilter hot_bf(1000);
-	BloomFilter footprint_bf(1000);
+	BloomFilter hot_bf(1000000, 2);
+	BloomFilter footprint_bf(1000000, 2);
 
 	for (;;) {
 		struct perf_event_mmap_page *p = buffer;
@@ -66,6 +67,10 @@ void process_working_set_size(void)
 					assert(ps != NULL);
 					address = ps->addr >> target_page_size;
 
+					//fprintf(fp, "addr: 0x%llx\n", ps->addr); 
+					//fprintf(fp, "addr: 0x%llx\n", address); 
+					//printf("addr: 0x%llx\n", ps->addr);
+
 					// update footprint
 					if (!footprint_bf.query(data.str)) {
 						footprint_page_count += 1;	
@@ -80,6 +85,7 @@ void process_working_set_size(void)
 
 					// update hot page
 					data_count = fre_sketch.query(data);
+					printf("addr: 0x%llx data_cnt: %d\n", data.addr, data_count);
 					if (data_count > hot_threshold && 
 						!hot_bf.query(data.str)) {
 						hot_page_count += 1;
@@ -90,9 +96,9 @@ void process_working_set_size(void)
 					// print info and reset status
 					if (count >= QUERY_PERIOD) {
 						assert(count == QUERY_PERIOD);
-						printf("hot: %d footprint: %d (KB)\n",
-							hot_page_count << target_page_size >> 10,
-							footprint_page_count << target_page_size >> 10);
+						//printf("hot: %d footprint: %d (KB)\n",
+						//	hot_page_count << target_page_size >> 10,
+						//	footprint_page_count << target_page_size >> 10);
 						count = 0;
 						hot_page_count = 0;
 						footprint_page_count = 0;
@@ -104,7 +110,7 @@ void process_working_set_size(void)
 					break;
 				case PERF_RECORD_THROTTLE:
 				case PERF_RECORD_UNTHROTTLE:
-					dprintf(STDERR_FILENO, "throttle or unthrottle\n");
+					//dprintf(STDERR_FILENO, "throttle or unthrottle\n");
 					break;
 				default:
 					dprintf(STDERR_FILENO, "error\n");
@@ -131,6 +137,9 @@ int main(int argc, char *argv[])
 		dprintf(STDERR_FILENO, "file: %s doesn't exist or can't exec\n", file_name);
 		exit(1);
 	}
+	
+	// open file for record result
+	//fp = fopen("./result", "w+");
 	
 	int rc = fork();
 	if (rc < 0){

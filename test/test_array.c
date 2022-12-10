@@ -5,8 +5,10 @@
 #include <sys/mman.h>
 #include <assert.h>
 
-#define size 100
+// 1e8 -> 400M
+#define size 100000000  
 int array[size];
+//int cold_array[size];
 int i, j;
 long long unsigned k;
 int tmp;
@@ -58,19 +60,27 @@ int main(int argc, char *argv[])
 				(unsigned long long int)mmap_addr,
 				(unsigned long long int)&mmap_addr);
 
-	while(1) {
-	    for (i = 0; i < size; i++) {
-			//tmp = array[i];	
-			//tmp = stack_addr_1;
-			//tmp = (int)stack_addr_2;
-			//tmp = *malloc_addr;
-			//tmp = *mmap_addr;
-	    	array[i] = 0x234;
-			stack_addr_1 = 0x09;
-			stack_addr_2 = 0.429;
-			*malloc_addr = 0x873;
-			*mmap_addr = 0x02942;
-			k+= 1;
-	    }	
-	}
+	//while(1) {
+		for (int i = 0; i < 1; i++) {
+	        for (i = 0; i < size; i += 1) {
+		    	//tmp = array[i];	
+		    	//tmp = stack_addr_1;
+		    	//tmp = (int)stack_addr_2;
+		    	//tmp = *malloc_addr;
+		    	//tmp = *mmap_addr;
+	        	array[i] = 0x234;
+//		    	stack_addr_1 = 0x09;
+//		    	stack_addr_2 = 0.429;
+//		    	*malloc_addr = 0x873;
+//		    	*mmap_addr = 0x02942;
+//		    	k+= 1;
+	        }	
+		}
+
+		//for (int i = 0; i < size; i++) {
+		//	cold_array[i] = 0x1234;
+		//}
+	//}
+
+	printf("\ntotal write: %lld", k);
 }
