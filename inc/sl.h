@@ -8,8 +8,14 @@
 #include "definition.h"
 #include "hash_class.h"
 
-const int WINDOW_SIZE = 2 * 1e5; // 800M / 4K
-const int QUERY_PERIOD = 1 * 1e5; // WINDOW_SIZE * 1/2
+// use memory access time to construct sliding window
+//const int WINDOW_SIZE = 2 * 1e5; // 800M / 4K
+//const int QUERY_PERIOD = 1 * 1e5; // WINDOW_SIZE * 1/2
+
+// use time to  construct slidin window
+// nano second
+const int WINDOW_SIZE = (int)1e9;
+const int QUERY_PERIOD = (int)1e9;
 
 class Sketch{
 public :

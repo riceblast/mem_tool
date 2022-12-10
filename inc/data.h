@@ -8,7 +8,7 @@ class Data{
 public:  
     //int head;
     //uint64_t timestamp;
-    int timestamp;
+    uint64_t timestamp;
     union {
 		unsigned char str[DATA_LEN];
 		long long unsigned int addr;
