@@ -14,8 +14,8 @@
 
 // use time to  construct slidin window
 // nano second
-const int WINDOW_SIZE = (int)1e9;
-const int QUERY_PERIOD = (int)1e9;
+const int WINDOW_SIZE = (int)10 * 1e9;
+const int QUERY_PERIOD = (int)10 * 1e9;
 
 class Sketch{
 public :

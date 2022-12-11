@@ -13,7 +13,7 @@
 int event = ALL_ACCESSES;
 int pid;
 int cpuid = -1;
-int target_page_size = 12; // 2 ^ 12byte, the page size we want to focus
+int target_page_size = 21; // 2 ^ 21byte, the page size we want to focus
 struct perf_event_mmap_page *buffer;
 
 char file_name[1000]; // store the elf file path
@@ -37,17 +37,19 @@ void process_working_set_size(void)
 	int count = 0; // the total access count of all addr in this window
 	int data_count; // the access count of addr in this window
 	int hot_threshold = 5;
-	double hot_threshold_rate = 0.03; // 2:8
+	//double hot_threshold_rate = 0.001; // 2:8
 	int hot_page_count = 0;
 	int footprint_page_count = 0;
+	int max = 1;
+	int min = 1;
 	long long unsigned int address;
 
 	Data data;
 	data.timestamp = 0;
 	data.addr = 0;
-	CM_SL fre_sketch(WINDOW_SIZE, 30 * 1024 * 1024, 3, 3); // 30M memory
-	BloomFilter hot_bf(1000000, 2);
-	BloomFilter footprint_bf(1000000, 2);
+	CM_SL fre_sketch(WINDOW_SIZE, 8 * 1024 * 1024, 3, 3); // 8M memory
+	BloomFilter hot_bf(8 * 1024 * 1024, 2);
+	BloomFilter footprint_bf(8 * 1024 * 1024, 2);
 
 	struct timespec cur_time = {0,0}; 
 	clock_gettime(CLOCK_MONOTONIC, &cur_time);
@@ -84,7 +86,7 @@ void process_working_set_size(void)
 					assert(ps != NULL);
 					address = ps->addr >> target_page_size;
 					data.addr = address;
-					printf("addr: 0x%llx\n", data.addr);
+					//printf("addr: 0x%llx\n", data.addr);
 
 					//fprintf(fp, "addr: 0x%llx\n", ps->addr); 
 					//fprintf(fp, "addr: 0x%llx\n", address); 
@@ -92,8 +94,8 @@ void process_working_set_size(void)
 
 					// update footprint
 					bool bool_result = footprint_bf.query(data.str);
-					printf("footprint: %d\n", bool_result);	
-					printf("cur_record_count: %ld\n", cur_record_count);
+					//printf("footprint: %d\n", bool_result);	
+					//printf("cur_record_count: %ld\n", cur_record_count);
 					if (!footprint_bf.query(data.str)) {
 						footprint_page_count += 1;	
 						footprint_bf.insert(data.str);
@@ -109,28 +111,41 @@ void process_working_set_size(void)
 
 					// update hot page
 					data_count = fre_sketch.query(data);
-					printf("addr: 0x%llx data_cnt: %d\n", data.addr, data_count);
-					printf("data_count: %d, last_record_count: %ld, rate: %lf\n", 
-						data_count, last_record_count, data_count/ (double)last_record_count);
-					if (((double)data_count / last_record_count) >  hot_threshold_rate && !hot_bf.query(data.str)) {
-					//if (data_count > hot_threshold && !hot_bf.query(data.str)) {
+					//printf("addr: 0x%llx data_cnt: %d\n", data.addr, data_count);
+					//printf("data_count: %d, last_record_count: %ld, rate: %lf\n", 
+					//	data_count, last_record_count, data_count/ (double)last_record_count);
+
+					// update max min
+					if (data_count > max)
+						max = data_count;
+					if (data_count < min)
+						min = data_count;
+
+					//if (((double)data_count / last_record_count) >  hot_threshold_rate && !hot_bf.query(data.str)) {
+					if (data_count > hot_threshold && !hot_bf.query(data.str)) {
 						hot_page_count += 1;
 						hot_bf.insert(data.str);
-						printf("hot page addr: 0x%llx\n", address);
+					//	printf("hot page addr: 0x%llx\n", address);
 					}
 
 					// print info and reset status
 					//if (count >= QUERY_PERIOD) {
-					if (cur_second_phase > last_second_phase) {
+					if (cur_second_phase > last_second_phase + 10) {
 						last_second_phase = cur_second_phase;
 						//assert(count == QUERY_PERIOD);
-						printf("hot: %d footprint: %d (KB)\n",
-							hot_page_count << target_page_size >> 10,
-							footprint_page_count << target_page_size >> 10);
-						printf("before: cur_record_count: %ld, last_record_cound: %ld\n", cur_record_count, last_record_count);
+						printf("footprint: %d hot: %d (MB)\n",
+							footprint_page_count << (target_page_size - 20),
+							hot_page_count << (target_page_size - 20));
+
+						//hot_threshold = cur_record_count / footprint_page_count + 1;
+						hot_threshold = (cur_record_count - 7 * max - 5 * min) /(footprint_page_count - 12);
+						printf("\nhot threshold: %d\n", hot_threshold);
+
+
+					//	printf("before: cur_record_count: %ld, last_record_cound: %ld\n", cur_record_count, last_record_count);
 						last_record_count = cur_record_count;
 						cur_record_count = 1;
-						printf("after: cur_record_count: %ld, last_record_cound: %ld\n", cur_record_count, last_record_count);
+					//	printf("after: cur_record_count: %ld, last_record_cound: %ld\n", cur_record_count, last_record_count);
 						hot_page_count = 0;
 						footprint_page_count = 0;
 

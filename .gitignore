@@ -5,6 +5,7 @@ mem_tool
 test_array
 *.swp
 *.tmp
+*.bak
 
 # Prerequisites
 *.d
